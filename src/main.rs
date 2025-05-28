@@ -55,12 +55,12 @@ fn parse_song(path: &Path) -> Option<Song> {
                     "TITLE" => s.title = tags[1].to_string(),
                     "ARTIST" => s.artist.push(tags[1].to_string()),
                     "COVER" => {
-                        let cover_path = path.join(tags[1].trim());
-                        if let Some(base64_img) = encode_image_to_base64(&cover_path) {
-                            s.cover_image = base64_img;
-                        }
+                        // let cover_path = path.join(tags[1].trim());
+                        // if let Some(base64_img) = encode_image_to_base64(&cover_path) {
+                        //     s.cover_image = base64_img;
+                        // }
                     }
-                    "BPM" => s.bpm = tags[1].parse().unwrap_or(0),
+                    "BPM" => s.bpm = tags[1].replace(',', ".").trim().parse::<f32>().map_err(|e| eprintln!("{e}: {path:?}")).unwrap_or(0.0) as _,
                     "END" => s.duration = (tags[1].parse::<u128>().unwrap_or(0) / 1000) as u64,
                     _ => {}
                 }
@@ -84,7 +84,7 @@ fn parse_song(path: &Path) -> Option<Song> {
 }
 
 fn try_fix_duration(s: &Song, text: &str) -> Option<u64> {
-    if s.duration == 0 {
+    if s.duration == 0 && s.bpm != 0 {
         if let Some(l) = text.lines().rev().find(|l| {
             [':', '*', 'R', 'F', 'G']
                 .iter()
