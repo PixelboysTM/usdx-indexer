@@ -7,11 +7,11 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Name of the person to greet
-    #[arg(short, long)]
-    songs: PathBuf,
+    /// Where the songs are located
+    #[arg(short, long, required = true)]
+    songs: Vec<PathBuf>,
 
-    /// Number of times to greet
+    /// Where to put the output json file e.g. out.json
     #[arg(short, long)]
     out_file: PathBuf,
 }
@@ -107,9 +107,9 @@ fn main() {
     let args = Args::parse();
 
     let mut data = vec![];
-    let songs = std::fs::read_dir(args.songs).expect("Must be a dir");
-    for song in songs {
-        if let Ok(song) = song {
+    for lib in args.songs {
+        let songs = std::fs::read_dir(lib).expect("Must be a dir");
+        for song in songs.flatten() {
             if song.file_type().unwrap().is_dir() {
                 if let Some(s) = parse_song(&song.path()) {
                     println!("Indexed {}", s.title);
@@ -122,22 +122,4 @@ fn main() {
     }
 
     std::fs::write(args.out_file, serde_json::to_string(&data).unwrap()).unwrap();
-}
-
-/*
-#VERSION:1.0.0
-#TITLE:Tubthumping
-#ARTIST:Chumbawamba
-#LANGUAGE:English
-#EDITION:SingStar ’90s [US], SingStar Summer Party [DE]
-#YEAR:1997
-#CREATOR:Leki
-#MP3:Chumbawamba - Tubthumping.m4a
-#COVER:Chumbawamba - Tubthumping [CO].jpg
-#BACKGROUND:Chumbawamba - Tubthumping [BG].jpg
-#VIDEO:Chumbawamba - Tubthumping.mp4
-#BPM:340
-#GAP:800
-
-
-*/
+}   
