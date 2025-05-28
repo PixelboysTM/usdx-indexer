@@ -40,14 +40,13 @@ fn encode_image_to_base64(path: &Path) -> Option<String> {
 
 fn parse_song(path: &Path) -> Option<Song> {
     let mut song = None;
-
     let contents = std::fs::read_dir(path).ok()?;
     for content in contents {
         let content = content.ok()?;
-        if content.path().ends_with(".txt") {
+        if content.file_name().to_string_lossy().ends_with(".txt") {
             let text = std::fs::read_to_string(content.path()).ok()?;
             let mut s = Song::default();
-            for l in text.split("\n") {
+            for l in text.lines() {
                 if !l.starts_with("#") {
                     continue;
                 }
@@ -61,14 +60,19 @@ fn parse_song(path: &Path) -> Option<Song> {
                             s.cover_image = base64_img;
                         }
                     }
-                    "BPM" => s.bpm = tags[1].parse().unwrap(),
-                    "END" => s.duration = (tags[1].parse::<u128>().unwrap() / 1000) as u64,
+                    "BPM" => s.bpm = tags[1].parse().unwrap_or(0),
+                    "END" => s.duration = (tags[1].parse::<u128>().unwrap_or(0) / 1000) as u64,
                     _ => {}
                 }
             }
 
             if let Some(d) = try_fix_duration(&s, &text) {
                 s.duration = d;
+            }
+
+            if s.title.is_empty() {
+                println!("Title empty taking folder name");
+                s.title = content.file_name().to_string_lossy().to_string();
             }
 
             song = Some(s);
@@ -81,7 +85,7 @@ fn parse_song(path: &Path) -> Option<Song> {
 
 fn try_fix_duration(s: &Song, text: &str) -> Option<u64> {
     if s.duration == 0 {
-        if let Some(l) = text.split('\n').rev().find(|l| {
+        if let Some(l) = text.lines().rev().find(|l| {
             [':', '*', 'R', 'F', 'G']
                 .iter()
                 .any(|s| (*l).starts_with(*s))
