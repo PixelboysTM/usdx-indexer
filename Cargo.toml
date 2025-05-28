@@ -1,0 +1,11 @@
+[package]
+name = "usdx-indexer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+clap = { version = "*", features = ["derive"] }
+image = { version = "*" }
+base64 = "0.22.1"
